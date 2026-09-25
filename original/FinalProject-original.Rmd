@@ -1,0 +1,254 @@
+---
+title: "Worldwide Happiness Factor"
+author: "Andrew Ham, Aneesh Reddy, Sean Kim"
+date: "2023-12-06"
+output: 
+  html_document:
+    code_folding: hide    
+    number_sections: false
+    toc: yes
+    toc_depth: 2  
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r init, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+library(ezids)
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+
+### I. Introduction
+
+The World Happiness Report, selected from the Kaggle dataset website, covers happiness levels worldwide using 156 observed countries. Happiness Score, dependent variable, is the main focus of our attention. Happiness-influencing factors regarded as independent variables, include GDP, Social Support, Healthy Life, and Generosity. In addition, we divided the countries into seven groups of territories, which makes our fifth dependent variable.
+
+Happiness is an essential factor and issue in every country, and it is vital to understand the impacts of various variables can have on an individual’s happiness.
+
+
+### II. SMART Question
+
+“What variables affect the happiness of a country’s population and how does happiness correlate a country’s region?” The research aims to find strong correlations between happiness and many factors.
+
+Our research was shaped by a SMART question that examined the strong correlation between happiness and many factors such as GDP per capita, Social Support, Healthy Life, Freedom, Generosity, and Corruption. So, what is the component that most strongly correlates with a person's happiness score? Our response to the smart question will be based on the Data Science Lifecycle. We created a research question, and shortly we will predict which factors have a strong and weak correlation with the happiness score. Next, we will discuss exploratory data analysis and modeling during the statistical test to make sure our prediction is accurate, and finally, we will discuss the data set's interpretation, Finally, we'll reflect on what we learned from our interpretation of the dataset and what we like or dislike about. Future research we can go over more accurate dataset based on recent year or diverse objective. 
+
+### III. Predictions
+
+We predict that a healthier life will lead to a higher happiness score because people living healthier lives are more likely to be employed and financially stable, conditions that are generally associated with happiness. Next, we predict that countries with lower generosity will have a lower happiness score since most of the population feels unvalued. After that, we expect that the countries with the highest GDP will have the highest happiness score, because a flourishing economy can provide more opportunities for the population. We also predict that the territory of a country will affect the happiness score. As a result, we indicate that the territory “East Asia & Pacific” will have a lower score as some of the countries within that territory are struggling with high suicide rates. Finally, we predict that countries with higher social support will have a higher happiness score, since higher support refers to the net of support, including friends and family, 
+that an individual has.
+
+### IV. Dataset and Libraries
+
+```{r, results='markup', warning=F}
+library(ezids)
+library(readr)
+library(countrycode)
+library(ggplot2)
+library(ggimage)
+library(corrplot)
+library(magrittr)
+library(dplyr)
+library(imager)
+```
+
+These are the libraries we used throughout the project.
+
+```{r, results='markup', warning=F}
+getwd()
+Happiness <- read.csv("2019.csv", col.names= c("Happiness_Rank", "Region", "Happiness_Score", "GDP_Per_Capita", "Social_Support", "Healthy_Life", "Freedom", "Generosity", "Corruption"))
+```
+
+We then accessed the 2019.csv file to use for our dataset.
+
+Name: World Happiness Report  
+Retrieved from: https://www.kaggle.com/datasets/unsdsn/world-happiness  
+Y variable: Happiness   
+X variables: GDP, Social Support, Healthy Life, Generosity, Territory
+
+### V. Managing Variables and Cleaning the Data
+
+```{r, results='markup', warning=F}
+Happiness$Territory = countrycode(sourcevar = Happiness$Region, origin = "country.name", destination = "region")
+Happiness$Territory <- as.factor(Happiness$Territory)
+str(Happiness)
+```
+
+To clean up the data, first we used the "countrycode" library to sort the country names in the data set by region. This allows us to use the factor variable "Territory" later on in the project.
+
+```{r, results='markup', warning=F}
+Happiness$ISO2C = countrycode(sourcevar = Happiness$Region, origin = "country.name", destination = "iso2c")
+str(Happiness)
+```
+
+We also used the "countrycode" library to create a new column that accesses the country's ISO2C code, which we will use later.
+
+```{r, results='markup', warning=F}
+colnames(Happiness)[0:10]=c("HappinessRank", "Country" ,"Happiness","GDP", "SocialSupport", "HealthyLife", "Freedom", "Generosity", "Corruption", "Territory")
+HappinessClean <- Happiness
+str(HappinessClean)
+```
+
+Next, we renamed the column names of the orginal dataset"Happiness" and renamed this data set to "HappinessClean" to facilitate the easy and clear usage of these variables.
+
+```{r}
+Path <- "/Users/andrewham/Documents/DATS1001/FinalProject/Project/country_flags/country-flags-main/png1000px/"
+Count = 1
+for(C in HappinessClean$ISO2C){
+Happiness$Address[Count] <- paste0(Path,C,".png"  )
+Count = Count + 1
+} 
+```
+
+We also used country flags to represent our points on the graphs to allow for better visualization of each country's comparative performance. To do this we first created a string for the directory that accesses the images of the country flags saved to our computers. Then, we used a for loop which accessed our data frame to print the specific image based on the country's "ISO2C" value to print that onto the directory path that we previously created. The use of "Count" allows for different country flags to be saved to different values which keeps the relevant flag consistent with the relevant country.
+
+```{r, results='markup', warning=F}
+HappinessClean_num = subset(Happiness)
+HappinessClean_num$Country = NULL
+HappinessClean_num$HappinessRank = NULL
+HappinessClean_num$Territory = NULL
+HappinessClean_num$ISO2C = NULL
+HappinessClean_num$Address = NULL
+str(HappinessClean_num)
+```
+
+Finally, we created a numerical dataset by removing the "Country", "HappinessRank", and "Territory" variables to use for our correlation plot.  
+
+## Statistical Tests and Analyses
+
+### I. Pearson Correlation Plot
+
+```{r, results='markup', warning=F}
+correlation <- cor(HappinessClean_num)
+corrplot(correlation, type="upper",  method = 'color')
+```
+
+We decided to use a Pearson Correlation Plot as the first way to analyze our data. The correlation plot allowed us to get an image of what variables are the most correlated with one another, which helped us when we chose which variables to compare. As expected, the correlation plot showed that most of the variables had some sort of correlation with happiness, and GDP, Social Support, and Healthy Life showed the most correlation. On the other hand, Generosity did not correlate highly with Happiness, contrary to our initial prediction.
+
+By using the correlation plot, we ultimately decided to compare Happiness to GDP, Social Support, Healthy Life, and Generosity. We chose Generosity because we wanted to see how an outlier would compare to the others that showed positive correlation, as the correlation of Generosity is closer to 0. We were not interested in the other variables, as they did not show a high enough correlation with happiness.
+
+### II. Linear Regression & VIF
+
+```{r}
+Happiness_LR <- lm(Happiness ~ SocialSupport + GDP + HealthyLife + Generosity, data = HappinessClean)
+Happiness_LR_sum <- summary(Happiness_LR)
+```
+
+```{r linearmodel_vif, results=T}
+xkablevif(Happiness_LR, title = 'Model VIFs')
+```
+
+`r format(xkabledply(Happiness_LR_sum, title = "Linear Regression of Happiness vs. Social Support, GDP, Healthy Life, and Generosity"))`
+
+As you can see in the above linear model, the p-values of Social Support, GDP, Healthy Life, and Generosity are all less than 0.05. This demonstrates that there is significance to be found when looking at how much of an impact on Happiness all of the above variables have. This is further demonstrated by a high coefficient of determination, $r^2$ = `r format(Happiness_LR_sum$r.squared, digits = 3)`.
+
+We also looked at the VIF of the variables within the model to ensure that multicollinearity is not a concern for our data. With VIF values less than 5, we can conclude that multicollinearity is not much of a concern for our data.
+
+### III. Scatterplots
+
+```{r, echo = FALSE, results='hide'}
+ggplot(HappinessClean, aes(x = SocialSupport, y = Happiness)) +
+  geom_point(color = "black") +
+  geom_image(image = Happiness$Address, size = 0.04) +
+  geom_smooth(method = "lm", se = FALSE, col = "cyan") +
+  labs(title="Happiness vs Social Support", x = "Social Support", y = "Happiness")
+```
+
+The first scatterplot shows the relationship between "Social Support" and "Happiness", showing positive correlation between the two variables. The correlation coefficient is `r format(cor(HappinessClean$Happiness, HappinessClean$SocialSupport, method = "pearson"))`, which is the third highest out of all of the scatterplots created. We can conclude that social support has a positive effect on happiness, as the more social support, the higher the happiness score of the country's population, as shown by the correlation coefficient.This data aligns with our initial prediction that GDP will have a positive relationship with happiness.
+
+According to the linear model, the p-value is below 0.05 showing significance in the results of the comparison of these two variables.
+
+```{r, echo = FALSE, results='hide'}
+ggplot(HappinessClean, aes(x = GDP, y = Happiness)) +
+  geom_point(color = "black") +
+  geom_image(image = Happiness$Address, size = 0.04) +
+  geom_smooth(method = "lm", se = FALSE, col = "cyan") +
+  labs(title="Happiness vs GDP", x = "GDP", y = "Happiness")
+```
+
+The second scatterplot shows the relationship between "GDP" and "Happiness", showing positive correlation between the two variables. The correlation coefficient is `r format(cor(HappinessClean$Happiness, HappinessClean$GDP, method = "pearson"))`, which is the highest out of all of the scatterplots created. We can conclude that GDP also has a positive effect on happiness, as the higher the GDP, the higher the happiness score of the country's population, as shown by the correlation coefficient. This data aligns with our initial prediction that a healthy lifestyle will have a positive relationship with happiness.
+
+According to the linear model, the p-value is below 0.05 showing significance in the results of the comparison of these two variables.
+
+```{r, echo = FALSE, results='hide'}
+ggplot(HappinessClean, aes(x = HealthyLife, y = Happiness)) +
+  geom_point(color = "black") +
+  geom_image(image = Happiness$Address, size = 0.04) +
+  geom_smooth(method = "lm", se = FALSE, col = "cyan") +
+  labs(title="Happiness vs Healthy Life", x = "Healthy Life", y = "Happiness")
+```
+
+The third scatterplot shows the relationship between "Healthy Life" and "Happiness", showing positive correlation between the two variables. The correlation coefficient is `r format(cor(HappinessClean$Happiness, HappinessClean$HealthyLife, method = "pearson"))`, which is the second highest out of all of the scatterplots created. We can conclude that a healthy life also has a positive effect on happiness, as the healthier the life, the higher the happiness score of the country's population, as shown by the correlation coefficient. This data aligns with our initial prediction that a social support system will have a positive relationship with happiness.
+
+
+According to the linear model, the p-value is below 0.05 showing significance in the results of the comparison of these two variables.
+
+```{r, echo = FALSE, results='hide'}
+ggplot(HappinessClean, aes(x = Generosity, y = Happiness)) +
+  geom_point(color = "black") +
+  geom_image(image = Happiness$Address, size = 0.04) +
+  geom_smooth(method = "lm", se = FALSE, col = "red") +
+  labs(title="Happiness vs Generosity", x = "Generosity", y = "Happiness")
+```
+
+The fourth scatterplot shows the relationship between "Generosity" and "Happiness", showing neutral correlation between the two variables. The correlation coefficient is `r format(cor(HappinessClean$Happiness, HappinessClean$Generosity, method = "pearson"))`, which is severely lower than all of the other scatterplots. We can conclude that the generosity of a country does not really have an effect on happiness, as is shown by the best fit line and correlation coefficient.This data contradicts our prediction that generosity and happiness would have a direct relationship.
+
+According to the linear model, the p-value is below 0.05 showing significance in the results of the comparison of these two variables.
+
+### IV. Boxplot
+
+```{r}
+ggplot(data = HappinessClean, aes(x = Happiness, y = Territory)) + 
+  geom_boxplot(fill = c("cyan","pink","orange","#5C4033", "green","yellow","white"), color = "black", width = 0.69) +
+  scale_y_discrete(limits = rev(unique(HappinessClean$Territory))) +
+  labs(title = "Boxplot of the Happiness of each Territory",
+       x = "Happiness", 
+       y = "Territory")
+```
+
+The boxplot shows the relationship between the region of the countries and their corresponding happiness. From the boxplot Europe & Central Asia, North America and Latin America & Caribbean countries all have relatively high happiness scores, East Asia & Pacific Middle East & North Africa fall into the intermediate range and the other two have low scores. We predicted that the “East Asia & Pacific'' territory would have a low happiness score on average, But looking at the boxplot it turned out that we were incorrect in our prediction. Earlier we also predicted that the region a country was in would have an effect on the happiness levels of that country. This was proven to be true, as different regions of the world have different average happiness levels.
+
+One thing that We would like to highlight is that North America seems to have a very high happiness score. This could be due to the fact that North America has a very small sample size compared to the other territories.
+
+## Conclusions
+
+### I. Social Importance & Social GOODS
+
+The World Happiness Report can help policymakers and others interested in promoting the well-being of their countries. By providing a score of countries based on their happiness levels, the report can be used to identify areas of improvement. For example, suppose a country has a low happiness score in the report, in that case, they could use the data and analysis provided to determine what factors contribute to the low ranking and take action to address those factors. Additionally, the report can be used to raise awareness about the importance of promoting well-being and happiness in society. By highlighting the role these factors, such as social support and healthy life play, it can help to promote a broader understanding of the factors and inspire action to improve those factors.
+
+### II. Improvements
+
+I would like to talk about some of the good aspects of this data set. The data set is strong and used in many papers and articles, and the data is collected year to year, tending to stay consistent. Our biggest point is that happiness is subjective; there is no true correct answer or value when measuring happiness. This is why we think the topic of happiness itself could be a flaw in the dataset. Also this data was collected before the pandemic, so it's not an accurate representation of the world post-pandemic since a lot has changed since then, which would affect happiness ratings globally. 
+
+### III. Conclustion 
+
+Our Smart question is “What variables have an effect on the happiness of a country’s population and how does happiness correlate to a country’s region?” So in order to answer this question we set out to find which variables have the highest correlation to happiness, and those were Social Support, GDP, Healthy life. Since Generosity has a very low correlation, it does not have an effect on the happiness of a country, yet the territory of a country does seem to have an effect on the happiness level. To take it a step further we ran a linear regression. We found that GDP, Healthy life, and Social support are the most significant variables. 
+
+These results are supported by outside research on happiness. An article by Lyndsey Matthew identified the variables: healthy life and social support “to be highly predictive of happiness.” Social support was also highlighted in another report, as well, by UCLA. Both reports also found that the happiest countries always have strong scores in these variables. This further supports our hypothesis
+
+### III. Works Cited
+
+Dylan Graves. (2019).Happier Countries Are More Suicidal: A Look at the World Happiness Report and Suicide Medium https://medium.com/@dtg319/happier-countries-are-more-suicidal-a-look-at-the-world-happiness-report-and-suicide-d5f44f69ce8e
+
+John F. Helliwell, Richard Layard and Jeffrey D. Sachs. (2019). World Happiness Report. Sustainable Development Solutions Network https://worldhappiness.report/ed/2019/
+
+Matthews, L. (2022). “The world’s happiest country is all about reading, coffee, and Saunas.” AFAR Media. https://www.afar.com/magazine/the-worlds-happiest-country-is-all-about-reading-coffee-and-saunas.
+
+UCLA (2022).Does Social Support Have the Biggest Impact on Happiness? World Happiness Report https://worldhappinessreport.humspace.ucla.edu/does-social-support-affect-happiness-2/
+
+
+
